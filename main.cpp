@@ -38,8 +38,21 @@ int checker(int n, int k, int width, int height, bool *mineGrid){
     return x;
 }
 
-void zeroFill(int y, int x, int *arr, int width, int height, bool *mineGrid, bool *open){
-    
+void zeroFill(int y, int x, bool *arr, int width, int height, bool *mineGrid, bool *open){
+    if (checker(y, x, width, height, mineGrid) == 0){
+        for(int n = -1; n<2;++n){
+            for (int k = -1; k < 2; ++k) {
+                if(k == 0 && n == 0) continue;
+                if(x+k+1!=width && x+k != 0 && (y+n+1)!=height*2 && y+n != 1 && !*(arr+y*height+x+k+n)){
+                    *(arr+y*height+n+x+k) = true;
+                    *(open+y*height+n+x+k) = true;
+                    zeroFill(y+n ,x+k ,arr ,width ,height ,mineGrid, open);
+                }
+            }
+        }
+    }else{
+        *(open+y*height+x) = true;
+    }
 }
 
 //void newMine(bool *mineGrid, int height,int width){
@@ -172,7 +185,7 @@ int main() {
                     for(int k=0;k<width;++k) {
                         std::string res = "";
                         res += mouse[0] == n/2 && mouse[1] == k ? '[' : ' ';
-                        if(open[n/2][k]){
+                        if(open[n/2][k] && !mineGrid[n/2][k]){
                             res+=std::to_string(checker(n, k, width, height, * mineGrid));
                         } else if(marker[n/2][k]){
                             res+='M';
@@ -235,10 +248,11 @@ int main() {
                         --screenIndex;
                         break;
                     }
-                    if(checker(mouse[0],mouse[1], width, height, *mineGrid) == 0){
-                        int p[2] = {mouse[0], mouse[1]};
-                        zeroFill(mouse[0], mouse[1], p, width, height, *mineGrid, *open);
-                    }
+//                    if(checker(mouse[0],mouse[1], width, height, *mineGrid) == 0){
+//                        bool p[width][height];
+//                        p[mouse[0]][mouse[1]] = true;
+//                        zeroFill(mouse[0], mouse[1], *p, width, height, *mineGrid, *open);
+//                    }
                     break;
                 case 224:
                     switch (getch()) {
