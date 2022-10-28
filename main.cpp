@@ -3,10 +3,13 @@
 
 #define SPACE 32
 #define ENTER 13
+#define C 99
 #define ARROW_KEY_RIGHT 77
 #define ARROW_KEY_DOWN 80
 #define ARROW_KEY_UP 72
 #define ARROW_KEY_LEFT 75
+
+bool debug=false;
 
 void clear(int n){
     for(int i = 0;i<n;++i) std::cout << "\n";
@@ -17,41 +20,58 @@ bool isNumber(const std::string& str){
     return true;
 }
 
-int checker(int n, int k, int width, int height, bool *mineGrid){
+int checker(int y, int x, int &width, int &height, bool *mineGrid){
+    //if(debug) std::cout << std::endl << y << " " << x << " " << width << " " << height << " " << mineGrid << std::endl;
     bool left = true, up = true, down = true, right = true;
-    if(k+1==width) right=false;
-    if(k == 0) left=false;
-    //std::cout << (n+1) << " " << height*2 << " ";
-    if((n+1)==height*2) down=false;
-    if(n == 1) up=false;
-    //std::cout << (k+1==width) << " " << (k == 0) << " " << ((n+1)==height*2) << " " << (n == 1) << " ";
-    int x = 0;
-    if(left) x+=*(mineGrid+(n/2)*height+(k-1));
-    if(right) x+=*(mineGrid+(n/2)*height+(k+1));
-    if(up) x+=*(mineGrid+((n/2)-1)*height+k);
-    if(down) x+=*(mineGrid+((n/2)+1)*height+k);
-    if(left && up) x+=*(mineGrid+((n/2)-1)*height+(k-1));
-    if(left && down) x+=*(mineGrid+((n/2)+1)*height+(k-1));
-    if(right && up) x+=*(mineGrid+((n/2)-1)*height+(k+1));
-    if(right && down) x+=*(mineGrid+((n/2)+1)*height+(k+1));
-    //std::cout << mineGrid[n/2][k-1] << " " << mineGrid[n/2][k+1] << " " << mineGrid[(n/2)-1][k] << " " << mineGrid[(n/2)+1][k] << " " << mineGrid[(n/2)-1][k-1] << " " << mineGrid[(n/2)+1][k-1] << " " << mineGrid[(n/2)-1][k+1] << " " << mineGrid[(n/2)+1][k+1];
-    return x;
+    if(x+1==width) right=false;
+    if(x == 0) left=false;
+    if(y+1==height) down=false;
+    if(y == 0) up=false;
+    int c = 0;
+    c+= left && mineGrid[y*width+x-1];
+    c+= right && mineGrid[y*width+x+1];
+    c+= up && mineGrid[(y-1)*width+x];
+    c+= down && mineGrid[(y+1)*width+x];
+    c+= left && up && mineGrid[(y-1)*width+x-1];
+    c+= left && down && mineGrid[(y+1)*width+x-1];
+    c+= right && up && mineGrid[(y-1)*width+x+1];
+    c+= right && down && mineGrid[(y+1)*width+x+1];
+    return c;
 }
 
-void zeroFill(int y, int x, bool *arr, int width, int height, bool *mineGrid, bool *open){
-    if (checker(y, x, width, height, mineGrid) == 0){
-        for(int n = -1; n<2;++n){
-            for (int k = -1; k < 2; ++k) {
-                if(k == 0 && n == 0) continue;
-                if(x+k+1!=width && x+k != 0 && (y+n+1)!=height*2 && y+n != 1 && !*(arr+y*height+x+k+n)){
-                    *(arr+y*height+n+x+k) = true;
-                    *(open+y*height+n+x+k) = true;
-                    zeroFill(y+n ,x+k ,arr ,width ,height ,mineGrid, open);
-                }
+void zeroFill(int y, int x, int &width, int &height, bool *mineGrid, bool *open){
+    if (checker(y, x, width, height, mineGrid) == 0 && !open[y*width+x]){
+        open[y*width+x]=true;
+        if(y+1 != height){
+            if(checker(y+1, x, width, height, mineGrid) == 0){
+                zeroFill(y+1 ,x,width ,height ,mineGrid,open);
+            }else if(!open[(y+1)*width+x]){
+                open[(y+1)*width+x]=true;
+            }
+        }
+        if(y > 0){
+            if(checker(y-1, x, width, height, mineGrid) == 0){
+                zeroFill(y-1 ,x ,width ,height ,mineGrid,open);
+            }else if(!open[(y-1)*width+x]){
+                open[(y-1)*width+x]=true;
+            }
+        }
+        if(x+1 != width){
+            if(checker(y,x+1,width,height,mineGrid) == 0){
+                zeroFill(y ,x+1 ,width ,height ,mineGrid,open);
+            }else if(!open[y*width+x+1]){
+                open[y*width+x+1]=true;
+            }
+        }
+        if(x > 0){
+            if(checker(y,x-1,width,height,mineGrid) == 0){
+                zeroFill(y ,x-1 ,width ,height ,mineGrid,open);
+            }else if(!open[y*width+x-1]){
+                open[y*width+x-1]=true;
             }
         }
     }else{
-        *(open+y*height+x) = true;
+        open[y*width+x]=true;
     }
 }
 
@@ -68,7 +88,7 @@ void zeroFill(int y, int x, bool *arr, int width, int height, bool *mineGrid, bo
 
 
 int main() {
-    std::string difficulty[] = {"Beginner\t9\t9\t10", "Intermediate 16\t16\t40","Expert\t16\t30\t99", "Custom"};
+    std::string difficulty[] = {"Beginner\t9\t9\t10", "Intermediate 16\t16\t40","Expert\t16\t30\t99", "Custom\t?\t?\t?"};
     int height = 0, width = 0;
     clear(100);
     while(true){
@@ -79,13 +99,16 @@ int main() {
                 std::cout << (i==difficultyIndex ? "[X]:" : "[ ]:") << difficulty[i] << std::endl;
             }
             switch (getch()) {
+                case C:
+                    debug=!debug;
+                    clear(100);
+                    break;
                 case SPACE:
                     clear(100);
                     break;
                 case ENTER:
                     if(difficultyIndex == 3) {
                         bool validSize = false, validMineAmount = false;
-                        int inMineAmount = 0;
                         std::string inSize;
                         while (!validSize || !validMineAmount){
                             if(!validSize) {
@@ -95,20 +118,20 @@ int main() {
                                 int n = inSize.find('x');
                                 if (n == std::string::npos) inSize.find('X');
                                 if (n != std::string::npos && n < inSize.length() && n > 0) {
-                                    std::string temp = "";
-                                    for (int i = 0; i < inSize.length() - n - 1; ++i) temp += inSize[i];
+                                    std::string temp;
+                                    for (int i = 0; i < n; ++i) temp += inSize[i];
                                     if (isNumber(temp) && !temp.empty()) height = std::stoi(temp);
                                     temp = "";
                                     for (int i = n + 1; i < inSize.length(); ++i) temp += inSize[i];
                                     if (isNumber(temp) && !temp.empty()) width = std::stoi(temp);
-                                    if (height * width > 1) validSize = true;
+                                    if ((height * width) > 1) validSize = true;
                                 }
                             }
-                            std::cout << "Ievadiet minu daudzumu:" << std::endl;
-                            std::cin >> inMineAmount;
-                            if(inMineAmount>0) {
-                                mines = inMineAmount;
-                                validMineAmount = true;
+                            if(!validMineAmount){
+                                std::cout << "Ievadiet minu daudzumu:" << std::endl;
+                                std::cin >> mines;
+                                if(mines>0) validMineAmount = true;
+
                             }
                         }
                         ++screenIndex;
@@ -144,27 +167,30 @@ int main() {
                             }
                             clear(100);
                             break;
+                        default:
+                            clear(100);
+                            break;
                     }
+                    break;
+                default:
+                    clear(100);
                     break;
             }
         }
         srand (time(nullptr));
-        int maxmines = width*height-1;
-        if(mines>maxmines) mines = maxmines;
-        bool mineGrid[height][width], marker[height][width], open[height][width];
-        for(int i = 0; i<height; ++i){
-            for(int n = 0;n<width; ++n){
-                marker[i][n] = false;
-                mineGrid[i][n] = false;
-                open[i][n] = false;
-            }
+        if(mines>width*height-1) mines = width*height-1;
+        bool mineGrid[height*width], marker[height*width], open[height*width];
+        for(int i = 0; i<height*width; ++i){
+            marker[i] = false;
+            mineGrid[i] = false;
+            open[i] = false;
         }
         for(int i = 0; i < mines; ++i){
             while(true){
                 int n = rand() % height;
                 int x = rand() % width;
-                if (!mineGrid[n][x]){
-                    mineGrid[n][x] = true;
+                if (!mineGrid[n*width+x]){
+                    mineGrid[n*width+x] = true;
                     break;
                 }
             }
@@ -177,17 +203,21 @@ int main() {
         int mouse[3] = {rand() % height,rand() % width, 1}, markedCount=0;
         while (screenIndex==1) {
             clear(100+height);
-            //std::cout << " Mouse index: " << mouse[0] << "h " << mouse[1] <<"w " << std::endl;
+            if(debug) {
+                std::cout << " Is mine: " << mineGrid[mouse[0]*width+mouse[1]]<< std::endl;
+                std::cout << " Mines Around: " << checker(mouse[0],mouse[1],width, height, mineGrid) << std::endl;
+                std::cout << " Mouse index: " << mouse[0] << "h " << mouse[1] <<"w " << std::endl;
+            }
             std::cout << " Mines left: " << mines-markedCount << std::endl;
             for(int n = 0; n<height*2+1;++n) {
                 if(n%2 == 1){
                     std::cout << " |";
                     for(int k=0;k<width;++k) {
-                        std::string res = "";
+                        std::string res;
                         res += mouse[0] == n/2 && mouse[1] == k ? '[' : ' ';
-                        if(open[n/2][k] && !mineGrid[n/2][k]){
-                            res+=std::to_string(checker(n, k, width, height, * mineGrid));
-                        } else if(marker[n/2][k]){
+                        if(open[n/2*width+k] && !mineGrid[n/2*width+k]){
+                            res+=std::to_string(checker(n/2, k, width, height, mineGrid));
+                        } else if(marker[n/2*width+k]){
                             res+='M';
                         } else{
                             res+='?';
@@ -209,64 +239,54 @@ int main() {
                 std::cout << std::endl;
             }
             int openCount = 0;
-            for(int i = 0; i<height;++i){
-                for(int x = 0; x<width;++x){
-                    if(marker[i][x] && mineGrid[i][x]) ++openCount;
-                    if(open[i][x]) ++openCount;
-                }
+            for(int i = 0; i<height*width;++i){
+                if(marker[i] && mineGrid[i] || open[i] || !open[i] && mineGrid[i]) ++openCount;
             }
             if(width*height == openCount) {
-                std::cout << "You Win!" << std::endl;
+                std::cout << " You Win!" << std::endl;
                 --screenIndex;
             }
             switch (getch()) {
+                case C:
+                    debug=!debug;
+                    break;
                 case ENTER:
-                    if(marker[mouse[0]][mouse[1]]){
-                        marker[mouse[0]][mouse[1]]=false;
-                        --markedCount;
-                    }else{
-                        marker[mouse[0]][mouse[1]]=true;
-                        ++markedCount;
-                    }
+                    marker[mouse[0]*width+mouse[1]]=!marker[mouse[0]*width+mouse[1]];
+                    marker[mouse[0]*width+mouse[1]] ? --markedCount : ++markedCount;
                     break;
                 case SPACE:
-                    if(mouse[2] && mineGrid[mouse[0]][mouse[1]]){
-                        mineGrid[mouse[0]][mouse[1]] = false;
+                    if(mouse[2] && mineGrid[mouse[0]*width+mouse[1]]){
                         while(true){
                             int n = rand() % height;
                             int x = rand() % width;
-                            if (!mineGrid[n][x]){
-                                mineGrid[n][x] = true;
+                            if (!mineGrid[n*width+x]){
+                                mineGrid[mouse[0]*width+mouse[1]] = false;
+                                mineGrid[n*width+x] = true;
                                 break;
                             }
                         }
                     }
                     mouse[2] = 0;
-                    open[mouse[0]][mouse[1]] = true;
-                    if(mineGrid[mouse[0]][mouse[1]] && open[mouse[0]][mouse[1]]){
-                        std::cout << "!!!GAME OVER!!!" << std::endl;
+                    zeroFill(mouse[0], mouse[1], width, height, mineGrid, open);
+                    if(mineGrid[mouse[0]*width+mouse[1]] && open[mouse[0]*width+mouse[1]]) {
+                        std::cout << " !!!GAME OVER!!!" << std::endl;
                         --screenIndex;
                         break;
                     }
-//                    if(checker(mouse[0],mouse[1], width, height, *mineGrid) == 0){
-//                        bool p[width][height];
-//                        p[mouse[0]][mouse[1]] = true;
-//                        zeroFill(mouse[0], mouse[1], *p, width, height, *mineGrid, *open);
-//                    }
                     break;
                 case 224:
                     switch (getch()) {
                         case ARROW_KEY_DOWN:
-                            if(mouse[0]<height-1) mouse[0]+=1;
+                            if(mouse[0]+1!=height) mouse[0]+=1;
                             break;
                         case ARROW_KEY_UP:
-                            if(mouse[0] > 0) mouse[0]-=1;
+                            if(mouse[0] != 0) mouse[0]-=1;
                             break;
                         case ARROW_KEY_RIGHT:
-                            if(mouse[1] != width-1) mouse[1]+=1;
+                            if(mouse[1]+1!= width) mouse[1]+=1;
                             break;
                         case ARROW_KEY_LEFT:
-                            if(mouse[1]> 0) mouse[1]-=1;
+                            if(mouse[1] != 0) mouse[1]-=1;
                             break;
                     }
                     break;
