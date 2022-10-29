@@ -252,7 +252,7 @@ int main() {
                     break;
                 case ENTER:
                     marker[mouse[0]*width+mouse[1]]=!marker[mouse[0]*width+mouse[1]];
-                    marker[mouse[0]*width+mouse[1]] ? --markedCount : ++markedCount;
+                    marker[mouse[0]*width+mouse[1]] ? ++markedCount : --markedCount;
                     break;
                 case SPACE:
                     if(mouse[2] && mineGrid[mouse[0]*width+mouse[1]]){
