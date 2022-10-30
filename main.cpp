@@ -163,7 +163,7 @@ int main() {
                     }
                     clear(100);
                     break;
-                #ifdef __linux__ \
+                #ifdef __linux__
                 case 27:
                     if(getch() != 91) break;
                 #else
