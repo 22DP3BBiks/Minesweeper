@@ -1,13 +1,22 @@
 #include <iostream>
+#ifdef __linux__
+#include <cstdio>
+int (*getch)() = std::getchar;
+#define ENTER 10
+#define ARROW_KEY_RIGHT 67
+#define ARROW_KEY_DOWN 66
+#define ARROW_KEY_UP 65
+#define ARROW_KEY_LEFT 68
+#else
 #include <conio.h>
-
-#define SPACE 32
 #define ENTER 13
-#define C 99
 #define ARROW_KEY_RIGHT 77
 #define ARROW_KEY_DOWN 80
 #define ARROW_KEY_UP 72
 #define ARROW_KEY_LEFT 75
+#endif
+#define C 99
+#define SPACE 32
 
 bool debug=false;
 
@@ -86,8 +95,9 @@ void zeroFill(int y, int x, int &width, int &height, bool *mineGrid, bool *open)
 //    }
 //}
 
-
 int main() {
+    //system("stty -echo");
+    //std::cout << getch() << " " << getch() << " " << getch() << " " << getch() << std::endl;
     std::string difficulty[] = {"Beginner\t9\t9\t10", "Intermediate 16\t16\t40","Expert\t16\t30\t99", "Custom\t?\t?\t?"};
     int height = 0, width = 0;
     clear(100);
@@ -153,7 +163,12 @@ int main() {
                     }
                     clear(100);
                     break;
+                #ifdef __linux__ \
+                case 27:
+                    if(getch() != 91) break;
+                #else
                 case 224:
+                #endif
                     switch (getch()) {
                         case ARROW_KEY_DOWN:
                             if (difficultyIndex < 3) {
@@ -274,7 +289,12 @@ int main() {
                         break;
                     }
                     break;
+                #ifdef __linux__
+                case 27:
+                    if(getch() != 91) break;
+                #else
                 case 224:
+                #endif
                     switch (getch()) {
                         case ARROW_KEY_DOWN:
                             if(mouse[0]+1!=height) mouse[0]+=1;
