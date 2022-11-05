@@ -8,6 +8,7 @@ int (*getch)() = std::getchar;
 #define ARROW_KEY_UP 65
 #define ARROW_KEY_LEFT 68
 #else
+#include <windows.h>
 #include <conio.h>
 #define ENTER 13
 #define ARROW_KEY_RIGHT 77
@@ -19,7 +20,7 @@ int (*getch)() = std::getchar;
 #define SPACE 32
 
 bool debug=false;
-
+HANDLE hCon = GetStdHandle(STD_OUTPUT_HANDLE);
 void clear(int n){
     for(int i = 0;i<n;++i) std::cout << "\n";
 }
@@ -218,6 +219,8 @@ int main() {
         int mouse[3] = {rand() % height,rand() % width, 1}, markedCount=0;
         while (screenIndex==1) {
             clear(100+height);
+//            std::ios::sync_with_stdio(false);
+//            std::cout.rdbuf()->pubsetbuf(nullptr, 0);
             if(debug) {
                 std::cout << " Is mine: " << mineGrid[mouse[0]*width+mouse[1]]<< std::endl;
                 std::cout << " Mines Around: " << checker(mouse[0],mouse[1],width, height, mineGrid) << std::endl;
@@ -228,17 +231,39 @@ int main() {
                 if(n%2 == 1){
                     std::cout << " |";
                     for(int k=0;k<width;++k) {
-                        std::string res;
-                        res += mouse[0] == n/2 && mouse[1] == k ? '[' : ' ';
+                        std::cout << (mouse[0] == n/2 && mouse[1] == k ? '[' : ' ');
                         if(open[n/2*width+k] && !mineGrid[n/2*width+k]){
-                            res+=std::to_string(checker(n/2, k, width, height, mineGrid));
+                            switch (checker(n/2, k, width, height, mineGrid)) {
+                                case 1:
+                                    SetConsoleTextAttribute(hCon, 9);
+                                    break;
+                                case 2:
+                                    SetConsoleTextAttribute(hCon, 2);
+                                    break;
+                                case 3:
+                                    SetConsoleTextAttribute(hCon, 12);
+                                    break;
+                                case 4:
+                                    SetConsoleTextAttribute(hCon, 1);
+                                    break;
+                                case 5:
+                                    SetConsoleTextAttribute(hCon, 4);
+                                    break;
+                                case 6:
+                                    SetConsoleTextAttribute(hCon, 3);
+                                    break;
+                                case 7:
+                                    SetConsoleTextAttribute(hCon, 8);
+                                    break;
+                            }
+                            std::cout << std::to_string(checker(n/2, k, width, height, mineGrid));
+                            SetConsoleTextAttribute(hCon, 15);
                         } else if(marker[n/2*width+k]){
-                            res+='M';
+                            std::cout << 'M';
                         } else{
-                            res+='?';
+                            std::cout << ' ';
                         }
-                        res += mouse[0] == n/2 && mouse[1] == k ? ']' : ' ';
-                        std::cout << res << "|";
+                        std::cout << (mouse[0] == n/2 && mouse[1] == k ? ']' : ' ') << "|";
                     }
                 }else if (n == 0 || n+1 == height*2+1){
                     std::cout << " 0";
@@ -253,6 +278,9 @@ int main() {
                 }
                 std::cout << std::endl;
             }
+//            std::cout << std::flush;
+//            std::cout.rdbuf()->pubsetbuf(nullptr, 0);
+//            std::ios::sync_with_stdio(true);
             int openCount = 0;
             for(int i = 0; i<height*width;++i){
                 if(marker[i] && mineGrid[i] || open[i] || !open[i] && mineGrid[i]) ++openCount;
@@ -297,16 +325,34 @@ int main() {
                 #endif
                     switch (getch()) {
                         case ARROW_KEY_DOWN:
-                            if(mouse[0]+1!=height) mouse[0]+=1;
+                            if(mouse[0]+1!=height){
+                                mouse[0]+=1;
+                            }else{
+                                mouse[0]=0;
+                            }
                             break;
                         case ARROW_KEY_UP:
-                            if(mouse[0] != 0) mouse[0]-=1;
+                            if(mouse[0] != 0){
+                                mouse[0]-=1;
+                            }
+                            else{
+                                mouse[0]=height-1;
+                            }
                             break;
                         case ARROW_KEY_RIGHT:
-                            if(mouse[1]+1!= width) mouse[1]+=1;
+                            if(mouse[1]+1!= width){
+                                mouse[1]+=1;
+                            }
+                            else{
+                                mouse[1]=0;
+                            }
                             break;
                         case ARROW_KEY_LEFT:
-                            if(mouse[1] != 0) mouse[1]-=1;
+                            if(mouse[1] != 0){
+                                mouse[1]-=1;
+                            }else{
+                                mouse[1]=width-1;
+                            }
                             break;
                     }
                     break;
